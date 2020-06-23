@@ -1,7 +1,7 @@
 Config {
 
    -- appearance
-     font =         "xft:Fira Code:size=9:bold:antialias=true"
+     font =         "xft:Fira Code:size=8:bold:antialias=true"
    , bgColor =      "black"
    , fgColor =      "#646464"
    , position =     TopW L 100
@@ -11,7 +11,7 @@ Config {
    -- layout
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
-   , template = " %StdinReader% }{ %multicpu% | %coretemp% | %memory% | Bright %mybright% | %battery% | %date% | %wlp3s0wi% |       "
+   , template = " %StdinReader% }{ %multicpu% | %coretemp% | %memory% | %disku% | %myvolume% | %bright% | %battery% | %date% | %wlp3s0wi%        "
 
    -- general behavior
    , iconRoot = "/home/thonkpad/.xmobar/xpm-status-icons/icons"
@@ -37,16 +37,11 @@ Config {
    --   color can be set by enclosing in <fc></fc> tags. For more details
    --   see http://projects.haskell.org/xmobar/#system-monitor-plugins.
    , commands =
-
-        -- weather monitor
-        [ Run Weather "RPXX" [ "--template", "<skyCondition> | <fc=#4682B4><tempC></fc>°C | <fc=#4682B4><rh></fc>% | <fc=#4682B4><pressure></fc>hPa"
-                             ] 36000
-
-        -- wireless network name
-        , Run Wireless "wlp3s0" ["-t", "<essid> (<quality>%)"] 10
+        -- network name
+        [ Run Wireless "wlp3s0" ["-t", "<essid> (<quality>%)"] 10
 
         -- cpu activity monitor
-        , Run MultiCpu       [ "--template" , "CPU: <total0>%|<total1>%"
+        , Run MultiCpu       [ "--template" , "CPU <total0>%|<total1>%"
                              , "--Low"      , "50"         -- units: %
                              , "--High"     , "85"         -- units: %
                              , "--low"      , "darkgreen"
@@ -55,7 +50,7 @@ Config {
                              ] 10
 
         -- cpu core temperature monitor
-        , Run CoreTemp       [ "--template" , "Temp: <core0>°C|<core1>°C"
+        , Run CoreTemp       [ "--template" , "Temp <core0>°C|<core1>°C"
                              , "--Low"      , "70"        -- units: °C
                              , "--High"     , "80"        -- units: °C
                              , "--low"      , "darkgreen"
@@ -64,7 +59,7 @@ Config {
                              ] 50
 
         -- memory usage monitor
-        , Run Memory         [ "--template" ,"Mem: <usedratio>%"
+        , Run Memory         [ "--template" ,"Mem <usedratio>%"
                              , "--Low"      , "20"        -- units: %
                              , "--High"     , "90"        -- units: %
                              , "--low"      , "darkgreen"
@@ -90,16 +85,16 @@ Config {
                              ] 50
 
         -- brightness monitor
-        , Run Brightness [ "-d" , "/sys/class/backlight/intel_backlight/"
-                         , "-c" , "actual_brightness"
-                         , "-m" , "max_brightness"
-                         , "-t" , "<bar>"
-                         ] 60
-        , Run Com "/bin/bash" ["-c", "echo `xbacklight -get | grep -oE '^.[0-9]{0,3}'`%"]  "mybright" 1
+        , Run Brightness     [ "-t", "Lite <percent>%", "--", "-D", "intel_backlight" ] 1
+
         -- time and date indicator
-        --   (%F = y-m-d date, %a = day of week, %T = h:m:s time)
         , Run Date           "<fc=#ABABAB>%F (%a) %T</fc>" "date" 10
-        , Run Com "/where/ever/trayer-padding-icon.sh" [] "trayerpad" 10
+
+        -- storage indicator
+        , Run DiskU [("/home", "Disk <free>")] ["-L", "20", "-H", "60"] 10
+
+        , Run Com "/usr/bin/bash" ["-c", "~/.xmonad/get-volume.sh" ] "myvolume" 1
+
         , Run StdinReader
         ]
    }
