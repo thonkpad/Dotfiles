@@ -11,7 +11,7 @@ import           Data.List
 import           Data.Monoid
 
 import           XMonad.Util.SpawnOnce          ( spawnOnce )
-import           XMonad.Util.Run
+--import           XMonad.Util.Run
 import           XMonad.Util.EZConfig           ( additionalKeys )
 import           XMonad.Util.Ungrab
 
@@ -19,7 +19,8 @@ import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
 import           XMonad.Hooks.ManageHelpers
 import           XMonad.Hooks.DynamicLog
-import           XMonad.Hooks.ManageHelpers
+import           XMonad.Hooks.ManageHelpers     ( isFullscreen )
+import           XMonad.Hooks.InsertPosition
 
 import           XMonad.Layout.NoBorders
 import           XMonad.Layout.Fullscreen
@@ -29,35 +30,54 @@ import           XMonad.Layout.Fullscreen
 
 main :: IO ()
 main = do
---  xmproc <- spawnPipe "xmobar"
   xmonad =<< xmobar defaults
 
--- Status Bar
 
 -- Settings and keybindings
-defaults = ewmh $ docks def {
-     terminal        = "kitty" -- kitty as default terminal
-   , modMask         = mod4Mask -- Super key as Mod key
-   , startupHook = myStartupHook <+> setFullscreenSupported
-   , layoutHook      = myLayoutHook
-   , manageHook = manageDocks <+> fullscreenManageHook <+> myManageHook
-   , logHook         = dynamicLog
-   , handleEventHook = handleEventHook def <+> XMonad.Hooks.EwmhDesktops.fullscreenEventHook
-                } `additionalKeys` {- My Keybindings -}
+defaults =
+  ewmh $ docks def { terminal        = "kitty" -- kitty as default terminal
+                   , modMask         = mod4Mask -- Super key as Mod key
+                   , startupHook     = myStartupHook <+> setFullscreenSupported
+                   , layoutHook      = myLayoutHook
+                   , manageHook      = insertPosition End Older
+                                       <+> manageDocks
+                                       <+> fullscreenManageHook
+                                       <+> myManageHook
+                   , logHook         = dynamicLog
+                   , handleEventHook = handleEventHook def
+                                       <+> XMonad.Hooks.EwmhDesktops.fullscreenEventHook
+                   }
+    `additionalKeys` {- My Keybindings -}
                      [
                      -- default app launcher
-                       ( (mod4Mask, xK_p), spawn "rofi -show drun -theme gruvbox-dark-hard")
+                       ( (modm, xK_p)
+                       , spawn "rofi -show drun -theme gruvbox-dark-hard"
+                       )
                      -- Volume Control
-                     , ( (0, xF86XK_AudioMute), spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle")
-                     , ( (0, xF86XK_AudioLowerVolume), spawn "pactl set-sink-volume @DEFAULT_SINK@ -5%")
-                     , ( (0, xF86XK_AudioRaiseVolume), spawn "pactl set-sink-volume @DEFAULT_SINK@ +5%")
+                     , ( (0, xF86XK_AudioMute)
+                       , spawn "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+                       )
+                     , ( (0, xF86XK_AudioLowerVolume)
+                       , spawn "pactl set-sink-volume @DEFAULT_SINK@ -5%"
+                       )
+                     , ( (0, xF86XK_AudioRaiseVolume)
+                       , spawn "pactl set-sink-volume @DEFAULT_SINK@ +5%"
+                       )
                      -- Brightness Control
-                     , ((0, xF86XK_MonBrightnessUp), spawn "xbacklight +5")
-                     , ( (0, xF86XK_MonBrightnessDown), spawn "xbacklight -5")
+                     , ((0, xF86XK_MonBrightnessUp)
+                       , spawn "xbacklight +5")
+                     , ( (0, xF86XK_MonBrightnessDown)
+                       , spawn "xbacklight -5"
+                       )
                      -- Screenshot
-                     , ( (0, xK_Print), spawn "scrot -q 90 /home/thonkpad/Pictures/scrot-%F-%T.png")
-                     , ( (shiftMask, xK_Print), unGrab >> spawn "scrot -q 90 -s /home/thonkpad/Pictures/scrot-%F-%T.png")
+                     , ( (0, xK_Print)
+                       , spawn "scrot -q 90 /home/thonkpad/Pictures/scrot-%F-%T.png"
+                       )
+                     , ( (shiftMask, xK_Print)
+                       , unGrab >> spawn "scrot -q 90 -s /home/thonkpad/Pictures/scrot-%F-%T.png"
+                       )
                      ]
+  where modm = mod4Mask
 
 -- Programs to start upon logging in to Xmonad
 myStartupHook = do
@@ -66,7 +86,7 @@ myStartupHook = do
   spawnOnce "dunst &"
   spawnOnce "xscreensaver &"
   spawnOnce "stalonetray &"
-  spawnOnce "nm-tray &"
+  spawnOnce "nm-applet &"
   spawnOnce "udiskie -ant &"
 
 -- Tiling layouts for Xmonad
@@ -86,7 +106,7 @@ myLayoutHook = smartBorders $ avoidStruts (tiled ||| Mirror tiled ||| Full)
 myManageHook = composeAll
   [ className =? "mpv" --> doFloat
   , (className =? "Firefox" <&&> resource =? "Dialog") --> doFloat
-  , className =? "nm-tray" --> doFloat
+  , className =? "nm-applet" --> doFloat
   , className =? "stalonetray" --> doIgnore
   , isFullscreen --> doFullFloat
   ]
